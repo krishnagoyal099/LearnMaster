@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 40% 98%; /* Sky blue to white base */
+  --foreground: 220 14.3% 4.1%;
+  --muted: 210 40% 95%;
+  --muted-foreground: 215 16% 47%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 14.3% 4.1%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --primary: 207 90% 54%; /* Sky blue */
+  --primary-foreground: 211 100% 99%;
+  --secondary: 210 40% 95%;
+  --secondary-foreground: 220 9% 10%;
+  --accent: 210 40% 95%;
+  --accent-foreground: 220 9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 207 90% 54%;
+  --radius: 0.75rem;
+
+  /* Custom gradient colors */
+  --gradient-from: 207 90% 54%; /* Sky blue */
+  --gradient-via: 200 100% 90%; /* Light blue */
+  --gradient-to: 0 0% 100%; /* White */
+}
+
+.dark {
+  --background: 222 84% 5%; /* Dark blue to black */
+  --foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 222 84% 5%;
+  --popover-foreground: 210 40% 98%;
+  --card: 222 84% 5%;
+  --card-foreground: 210 40% 98%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 207 90% 54%;
+
+  /* Dark gradient colors */
+  --gradient-from: 240 100% 27%; /* Dark blue */
+  --gradient-via: 240 60% 15%; /* Darker blue */
+  --gradient-to: 0 0% 0%; /* Black */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply antialiased bg-background text-foreground;
+    font-family: "Inter", sans-serif;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-from)) 0%,
+      hsl(var(--gradient-via)) 50%,
+      hsl(var(--gradient-to)) 100%
+    );
+  }
+}
+
+@layer components {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
