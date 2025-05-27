@@ -6,9 +6,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "5mb" })); // Increase JSON body limit to 2mb
+app.use(express.urlencoded({ limit: "5mb", extended: true })); // If you use urlencoded
 
 app.use((req, res, next) => {
   const start = Date.now();

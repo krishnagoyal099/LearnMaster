@@ -39,6 +39,12 @@ export function Header() {
               >
                 Pricing
               </Link>
+              <Link
+                href="/revision"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Revision
+              </Link>
             </nav>
           </div>
           <div className="flex items-center space-x-4">

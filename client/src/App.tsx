@@ -9,6 +9,7 @@ import Leaderboard from "@/pages/Leaderboard";
 import Pricing from "@/pages/Pricing";
 import Break from "@/pages/Break";
 import NotFound from "@/pages/not-found";
+import Revision from "./pages/Revision";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/break" component={Break} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/revision" component={Revision} />{" "}
       <Route component={NotFound} />
     </Switch>
   );
