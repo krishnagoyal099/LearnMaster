@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LoginModal } from "./LoginModal";
 import { useTheme } from "./ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
 
   return (
     <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
@@ -53,7 +58,7 @@ export function Header() {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <Button
               variant="outline"
               size="icon"
@@ -66,10 +71,31 @@ export function Header() {
                 <Moon className="h-5 w-5" />
               )}
             </Button>
-            <Button className="bg-primary hover:bg-primary/90">Login</Button>
+
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user.name || user.email}
+                </span>
+                <Button variant="outline" onClick={logout}>
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => setShowLoginModal(true)}
+              >
+                Login
+              </Button>
+            )}
           </div>
         </div>
       </div>
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </header>
   );
 }

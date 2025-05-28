@@ -11,6 +11,7 @@ import Break from "@/pages/Break";
 import NotFound from "@/pages/not-found";
 import Revision from "./pages/Revision";
 import Chat from "@/pages/Chat";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 function Router() {
   return (
@@ -31,8 +32,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <Toaster />
-          <Router />
+          <AuthProvider>
+            <Toaster />
+            <Router />
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
