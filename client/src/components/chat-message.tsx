@@ -89,8 +89,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
         <div
           className={`rounded-2xl px-4 py-3 shadow-sm ${
             message.role === "ai"
-              ? "bg-[hsl(var(--light-secondary))] dark:bg-[hsl(var(--dark-secondary))] rounded-tl-sm"
-              : "bg-blue-500 text-white rounded-tr-sm ml-8"
+              ? "bg-[hsl(var(--light-secondary))] dark:bg-[hsl(var(--dark-secondary))] rounded-tl-sm text-foreground"
+              : "bg-[hsl(var(--gemini-primary))] text-white rounded-tr-sm ml-8"
           }`}
         >
           <div 

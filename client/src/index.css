@@ -26,9 +26,15 @@
   --radius: 0.75rem;
 
   /* Light theme gradient colors */
-  --gradient-from: 210 100% 98%; /* Light blue */
-  --gradient-via: 220 100% 98%; /* Light purple */
-  --gradient-to: 230 100% 98%; /* Light indigo */
+  --gradient-from: 210 100% 97%; /* Light blue gradient */
+  --gradient-via: 220 90% 97%; /* Light purple gradient */
+  --gradient-to: 230 85% 97%; /* Light indigo gradient */
+
+  /* Light theme chat message colors */
+  --light-secondary: 210 40% 95%; /* Light AI message background */
+  --dark-secondary: 217 47% 17%; /* Not used in light mode */
+  --gemini-primary: 207 90% 54%; /* Blue for user messages */
+  --gemini-secondary: 220 90% 64%; /* Purple accent */
 }
 
 .dark {
@@ -56,6 +62,12 @@
   --gradient-from: 222 47% 11%;
   --gradient-via: 221 45% 13%;
   --gradient-to: 220 43% 15%;
+
+  /* Dark theme chat message colors */
+  --light-secondary: 210 40% 95%; /* Not used in dark mode */
+  --dark-secondary: 217 47% 17%; /* Dark AI message background */
+  --gemini-primary: 210 90% 64%; /* Lighter blue for user messages in dark mode */
+  --gemini-secondary: 220 90% 74%; /* Lighter purple accent */
 }
 
 @layer base {

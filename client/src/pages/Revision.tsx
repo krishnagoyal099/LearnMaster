@@ -161,10 +161,10 @@ export default function Revision() {
 
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar for History */}
-        <div className="w-80 border-r border-white/10 bg-white/5 backdrop-blur-sm">
-          <div className="p-6 border-b border-white/10">
+        <div className="w-80 border-r border-border bg-background/50 dark:border-white/10 dark:bg-white/5 backdrop-blur-sm">
+          <div className="p-6 border-b border-border dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-gray-900 dark:text-white text-lg font-semibold">
+              <h2 className="text-foreground text-lg font-semibold">
                 Study History
               </h2>
               {videoHistory.length > 0 && (
@@ -172,7 +172,7 @@ export default function Revision() {
                   variant="ghost"
                   size="sm"
                   onClick={clearHistory}
-                  className="h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/10 rounded-md"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -183,7 +183,7 @@ export default function Revision() {
           <ScrollArea className="h-[calc(100vh-12rem)]">
             <div className="p-4">
               {videoHistory.length === 0 ? (
-                <div className="text-center text-gray-600 dark:text-white/50 py-12">
+                <div className="text-center text-muted-foreground py-12">
                   <History className="h-8 w-8 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No study materials created yet</p>
                   <p className="text-xs mt-1">
@@ -196,13 +196,13 @@ export default function Revision() {
                     <div
                       key={item.id}
                       onClick={() => handleHistoryItemClick(item)}
-                      className="group relative flex items-start gap-3 p-3 rounded-lg hover:bg-white/10 cursor-pointer transition-all duration-200"
+                      className="group relative flex items-start gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer transition-all duration-200"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-gray-900 dark:text-white text-sm font-medium line-clamp-2 leading-tight mb-1">
+                        <p className="text-foreground text-sm font-medium line-clamp-2 leading-tight mb-1">
                           {item.title}
                         </p>
-                        <p className="text-gray-600 dark:text-white/50 text-xs">
+                        <p className="text-muted-foreground text-xs">
                           {formatDate(item.timestamp)}
                         </p>
                       </div>
@@ -213,7 +213,7 @@ export default function Revision() {
                           e.stopPropagation();
                           removeFromHistory(item.id);
                         }}
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-white/40 hover:text-white hover:bg-white/10 rounded transition-all"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-all"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -235,10 +235,10 @@ export default function Revision() {
                   <Brain className="h-10 w-10 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-gray-900 dark:text-white text-4xl font-bold mb-2">
+                  <h1 className="text-foreground text-4xl font-bold mb-2">
                     Smart Revision Hub
                   </h1>
-                  <p className="text-gray-700 dark:text-white/80 text-lg">
+                  <p className="text-muted-foreground text-lg">
                     Convert educational videos into personalized study materials
                     for effective revision
                   </p>
@@ -276,12 +276,12 @@ export default function Revision() {
             {(flashcards.length > 0 || quizQuestions.length > 0) && (
               <div className="w-full space-y-8">
                 <div className="text-center space-y-3">
-                  <h2 className="text-gray-900 dark:text-white text-2xl font-semibold">
+                  <h2 className="text-foreground text-2xl font-semibold">
                     {currentMode === "flashcards"
                       ? "Revision Flashcards"
                       : "Knowledge Assessment"}
                   </h2>
-                  <p className="text-gray-700 dark:text-white/70">
+                  <p className="text-muted-foreground">
                     {currentMode === "flashcards"
                       ? `${flashcards.length} flashcards created for focused revision and memory retention`
                       : `${quizQuestions.length} questions to evaluate your comprehension and identify knowledge gaps`}
