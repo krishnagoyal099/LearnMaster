@@ -1,24 +1,33 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Bot } from 'lucide-react';
+import { useState } from "react";
+import { Bot } from "lucide-react";
+import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 
 interface SearchSectionProps {
   onSearch: (query: string) => void;
 }
 
 export function SearchSection({ onSearch }: SearchSectionProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
-  const handleSearch = () => {
-    if (query.trim()) {
-      onSearch(query.trim());
-    }
+  // Placeholders for the animated effect
+  const placeholders = [
+    "For example: Python, JavaScript, Machine Learning...",
+    "What do you want to learn today?",
+    "Try 'React for beginners'",
+    "Type a topic and press Enter!",
+    "Find resources for Data Science, AI, and more...",
+  ];
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+  // Handle submit (Enter or button)
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (query.trim()) {
+      onSearch(query.trim());
     }
   };
 
@@ -34,21 +43,11 @@ export function SearchSection({ onSearch }: SearchSectionProps) {
           </h1>
         </div>
         <div className="relative max-w-2xl mx-auto">
-          <Input
-            type="text"
-            placeholder="For example: Python, JavaScript, Machine Learning..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="w-full px-6 py-4 text-lg rounded-xl border-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm h-14"
+          <PlaceholdersAndVanishInput
+            placeholders={placeholders}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
           />
-          <Button
-            onClick={handleSearch}
-            className="absolute right-2 top-2 bg-primary hover:bg-primary/90 h-10 w-10"
-            size="icon"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
         </div>
       </div>
     </section>

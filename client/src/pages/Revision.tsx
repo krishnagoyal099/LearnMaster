@@ -1,70 +1,85 @@
 import { useState } from "react";
-import { Header } from "@/components/Header";
+import { useMutation } from "@tanstack/react-query";
+import { generateContent } from "@/lib/api";
+import { UrlInputForm } from "@/components/url-input-form";
+import { Flashcard } from "@/components/flashcard";
+import { QuizStack } from "@/components/quiz-stack";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Header } from "@/components/Header";
+import type {
+  Flashcard as FlashcardType,
+  QuizQuestion as QuizQuestionType,
+} from "../../../shared/schema";
 
 export default function Revision() {
-  const [videoId, setVideoId] = useState("");
-  const [type, setType] = useState<"quiz" | "flashcards">("quiz");
-  const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [flashcards, setFlashcards] = useState<FlashcardType[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionType[]>([]);
+  const [currentMode, setCurrentMode] = useState<"flashcards" | "quiz">(
+    "flashcards"
+  );
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    setResult(null);
-    const transcriptRes = await fetch(
-      `/api/youtube/transcript?videoId=${videoId}`
-    );
-    const transcriptData = await transcriptRes.json();
-    if (!transcriptData.transcript) {
-      setResult("No transcript found for this video.");
-      setLoading(false);
-      return;
-    }
-    const revisionRes = await fetch("/api/revision/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcript: transcriptData.transcript, type }),
-    });
-    const { result } = await revisionRes.json();
-    setResult(result);
-    setLoading(false);
+  const generateMutation = useMutation({
+    mutationFn: generateContent,
+    onSuccess: (data) => {
+      setFlashcards(data.flashcards);
+      setQuizQuestions(data.quizQuestions);
+    },
+  });
+
+  const handleGenerateContent = (youtubeUrl: string) => {
+    generateMutation.mutate({ youtubeUrl });
+  };
+
+  const handleQuizComplete = (score: number) => {
+    const total = quizQuestions.length;
+    const percentage = Math.round((score / total) * 100);
+    alert(`Quiz completed! You scored ${score}/${total} (${percentage}%)`);
   };
 
   return (
-    <div>
+    <div className="min-h-screen gradient-bg flex flex-col">
       <Header />
-      <main className="max-w-xl mx-auto py-12">
-        <h1 className="text-3xl font-bold mb-6">Revision</h1>
-        <div className="mb-4">
-          <input
-            className="border px-3 py-2 rounded w-full mb-2"
-            placeholder="Paste YouTube Video ID"
-            value={videoId}
-            onChange={(e) => setVideoId(e.target.value)}
-          />
-          <div className="flex gap-4 mb-2">
-            <Button
-              variant={type === "quiz" ? "default" : "outline"}
-              onClick={() => setType("quiz")}
-            >
-              Quiz
-            </Button>
-            <Button
-              variant={type === "flashcards" ? "default" : "outline"}
-              onClick={() => setType("flashcards")}
-            >
-              Memory Cards
-            </Button>
-          </div>
-          <Button onClick={handleGenerate} disabled={!videoId || loading}>
-            {loading ? "Generating..." : "Generate"}
-          </Button>
-        </div>
-        {result && (
-          <pre className="bg-muted p-4 rounded whitespace-pre-wrap mt-4">
-            {result}
-          </pre>
-        )}
+      <main className="flex-1 flex items-center justify-center">
+        <Card className="w-full max-w-2xl shadow-xl rounded-2xl bg-white/90 dark:bg-gray-900/80 border border-border">
+          <CardContent className="p-8">
+            <h2 className="text-2xl font-bold text-center mb-6 text-foreground">
+              YouTube to Study Cards & Quiz
+            </h2>
+            <p className="text-center text-muted-foreground mb-8">
+              Paste a YouTube video URL below to generate flashcards and quiz
+              questions.
+            </p>
+            <UrlInputForm
+              onSubmit={handleGenerateContent}
+              isLoading={generateMutation.isPending}
+              onModeChange={setCurrentMode}
+              currentMode={currentMode}
+            />
+            {generateMutation.isError && (
+              <div className="mt-4 text-red-600 text-center">
+                {generateMutation.error instanceof Error
+                  ? generateMutation.error.message
+                  : "An error occurred. Please try again."}
+              </div>
+            )}
+            {(flashcards.length > 0 || quizQuestions.length > 0) && (
+              <div className="mt-8">
+                {currentMode === "flashcards" && flashcards.length > 0 && (
+                  <Flashcard flashcards={flashcards} />
+                )}
+                {currentMode === "quiz" && quizQuestions.length > 0 && (
+                  <div>
+                    <QuizStack
+                      quizQuestions={quizQuestions}
+                      onComplete={handleQuizComplete}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

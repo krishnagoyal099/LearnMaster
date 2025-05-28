@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { VideoResources } from "./VideoResources";
 import { BookResources } from "./BookResources";
-import { BreakModal } from "./BreakModal";
-import { Clock, Bookmark, Gamepad2 } from "lucide-react";
+import { Clock, Bookmark } from "lucide-react";
 
 interface LearningInterfaceProps {
   subject: string;
@@ -13,7 +12,6 @@ type TimePreference = "quick" | "comprehensive" | null;
 
 export function LearningInterface({ subject }: LearningInterfaceProps) {
   const [timePreference, setTimePreference] = useState<TimePreference>(null);
-  const [showBreakModal, setShowBreakModal] = useState(false);
 
   return (
     <main className="px-4 pb-8 animate-fade-in">
@@ -51,17 +49,6 @@ export function LearningInterface({ subject }: LearningInterfaceProps) {
           <BookResources subject={subject} />
         </div>
 
-        {/* Break Section */}
-        <div className="mt-8 text-center">
-          <Button
-            onClick={() => setShowBreakModal(true)}
-            className="bg-purple-600 hover:bg-purple-700 px-8 py-3 shadow-lg"
-          >
-            <Gamepad2 className="mr-2 h-5 w-5" />
-            Take a Focus Break
-          </Button>
-        </div>
-
         {/* Progress Tracker */}
         <div className="fixed bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-4">
           <div className="flex items-center space-x-3">
@@ -78,11 +65,6 @@ export function LearningInterface({ subject }: LearningInterfaceProps) {
             </div>
           </div>
         </div>
-
-        <BreakModal
-          isOpen={showBreakModal}
-          onClose={() => setShowBreakModal(false)}
-        />
       </div>
     </main>
   );

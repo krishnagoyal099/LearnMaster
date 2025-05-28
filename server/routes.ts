@@ -1,10 +1,35 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import {
+  videoSearchSchema,
+  generateContentRequestSchema,
+  insertMessageSchema,
+} from "@shared/schema";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { YoutubeTranscript } from "youtube-transcript";
 
+import { extractYouTubeTranscript } from "./utils/youtubeTranscript";
+import { generateContentWithGemini } from "./utils/geminiClient";
+import { parseFlashcardsAndQuiz } from "./utils/flashcardParser";
+
+interface Video {
+  id: number;
+  youtubeUrl: string;
+  title: string;
+  transcript: string;
+  flashcards: any[];
+  quizQuestions: any[];
+  contentDetails?: {
+    duration: string;
+  };
+  statistics?: {
+    viewCount: string;
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // YouTube API integration
+  // YouTube API search endpoint with enhanced functionality
   app.get("/api/youtube/search", async (req, res) => {
     try {
       const { q: query, type: timePreference } = req.query;
@@ -143,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             views: parseInt(views).toLocaleString() + " views",
           };
         })
-        .filter((video: unknown) => video !== null); // Remove filtered out videos
+        .filter((video) => video !== null); // Remove filtered out videos
 
       res.json(videos);
     } catch (error) {
@@ -316,66 +341,94 @@ Focus on practical, well-known books that are actually available and useful for 
       res.status(500).json({ error: "Failed to fetch transcript" });
     }
   });
-  app.post("/api/revision/generate", async (req, res) => {
-    const { transcript, type } = req.body;
-    if (!transcript || typeof transcript !== "string") {
-      return res.status(400).json({ error: "Transcript is required" });
-    }
-    if (!type || !["quiz", "flashcards"].includes(type)) {
-      return res
-        .status(400)
-        .json({ error: "Type must be 'quiz' or 'flashcards'" });
-    }
 
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) {
-      return res.status(500).json({ error: "Gemini API key not configured" });
-    }
-
-    let prompt = "";
-    if (type === "quiz") {
-      prompt = `Generate 5 multiple-choice quiz questions (with 4 options each and the correct answer) based on this transcript:\n${transcript}`;
-    } else {
-      prompt = `Generate 10 memory flashcards as Q&A pairs based on this transcript:\n${transcript}`;
-    }
-
+  // Generate content from YouTube URL
+  app.post("/api/generate-content", async (req, res) => {
     try {
-      const geminiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: prompt,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
+      const validatedData = generateContentRequestSchema.parse(req.body);
 
-      if (!geminiResponse.ok) {
-        throw new Error(`Gemini API error: ${geminiResponse.status}`);
+      // Create initial video record
+      const video = await storage.createVideo({
+        youtubeUrl: validatedData.youtubeUrl,
+      });
+
+      // Extract transcript
+      let transcript: string;
+      try {
+        transcript = await extractYouTubeTranscript(validatedData.youtubeUrl);
+      } catch (error) {
+        return res.status(400).json({
+          message:
+            "Failed to extract transcript from YouTube video. Please check the URL and ensure the video has captions available.",
+        });
       }
 
-      const geminiData = await geminiResponse.json();
-      const aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!aiResponse) {
-        return res.status(500).json({ error: "No response from Gemini AI" });
+      // Generate content using Gemini AI
+      let geminiResponse: string;
+      try {
+        geminiResponse = await generateContentWithGemini(transcript);
+      } catch (error) {
+        return res.status(500).json({
+          message:
+            "Failed to generate content using AI. Please try again later.",
+        });
       }
 
-      res.json({ result: aiResponse });
+      // Parse the response into flashcards and quiz questions
+      const { flashcards, quizQuestions } =
+        parseFlashcardsAndQuiz(geminiResponse);
+
+      // Update video with generated content
+      const updatedVideo = await storage.updateVideo(video.id, {
+        transcript,
+        flashcards,
+        quizQuestions,
+      });
+
+      if (!updatedVideo) {
+        return res.status(500).json({
+          message: "Failed to save generated content.",
+        });
+      }
+
+      res.json({
+        id: updatedVideo.id,
+        title: updatedVideo.title,
+        flashcards,
+        quizQuestions,
+      });
     } catch (error) {
-      console.error("Gemini API error:", error);
-      res.status(500).json({ error: "Failed to generate revision content" });
+      console.error("Error generating content:", error);
+      res.status(500).json({
+        message: "An unexpected error occurred while processing your request.",
+      });
+    }
+  });
+
+  // Get video by ID
+  app.get("/api/videos/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid video ID" });
+      }
+
+      const video = await storage.getVideo(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      res.json({
+        id: video.id,
+        title: video.title,
+        flashcards: video.flashcards || [],
+        quizQuestions: video.quizQuestions || [],
+      });
+    } catch (error) {
+      console.error("Error fetching video:", error);
+      res.status(500).json({
+        message: "Failed to fetch video data.",
+      });
     }
   });
 
@@ -511,6 +564,67 @@ Focus on practical, well-known books that are actually available and useful for 
     }
   });
 
+  // Add new endpoints for suggestions, search history, and favorites
+  app.get("/api/suggestions", async (req, res) => {
+    // ... your new suggestions endpoint code ...
+  });
+
+  app.get("/api/search-history", async (req, res) => {
+    // ... your new search history endpoint code ...
+  });
+
+  app.post("/api/favorites", async (req, res) => {
+    // ... your new favorites post endpoint code ...
+  });
+
+  app.delete("/api/favorites/:videoId", async (req, res) => {
+    // ... your new favorites delete endpoint code ...
+  });
+
+  app.get("/api/favorites", async (req, res) => {
+    // ... your new favorites get endpoint code ...
+  });
+
+  app.get("/api/favorites/:videoId", async (req, res) => {
+    // ... your new favorites check endpoint code ...
+  });
+
+  app.get("/api/videos", async (req, res) => {
+    try {
+      const videos = await storage.getVideos();
+      // Add type annotation for the map callback parameter
+      const formattedVideos = videos.map((video: Video) => ({
+        id: video.id,
+        title: video.title,
+        duration: video.contentDetails?.duration || "",
+        viewCount: video.statistics?.viewCount || "0",
+        flashcards: video.flashcards || [],
+        quizQuestions: video.quizQuestions || [],
+      }));
+      res.json(formattedVideos);
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      res.status(500).json({ error: "Failed to fetch videos" });
+    }
+  });
+
+  // New messages endpoint
+  app.post("/api/messages", async (req, res) => {
+    try {
+      // Validate input
+      const validatedData = insertMessageSchema.parse(req.body);
+
+      // Save message
+      const userMessage = await storage.createMessage(validatedData);
+
+      res.json(userMessage);
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
+

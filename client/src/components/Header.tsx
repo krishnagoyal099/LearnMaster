@@ -45,6 +45,12 @@ export function Header() {
               >
                 Revision
               </Link>
+              <Link
+                href="/chat"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Chat
+              </Link>
             </nav>
           </div>
           <div className="flex items-center space-x-4">

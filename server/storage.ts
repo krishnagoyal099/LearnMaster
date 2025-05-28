@@ -1,23 +1,42 @@
-import { 
-  users, 
-  learningHistory, 
+import {
+  users,
+  learningHistory,
   breakSessions,
-  type User, 
+  type User,
   type InsertUser,
   type LearningHistory,
   type InsertLearningHistory,
   type BreakSession,
-  type InsertBreakSession
+  type InsertBreakSession,
+  messages,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  createLearningHistory(history: InsertLearningHistory): Promise<LearningHistory>;
+  createLearningHistory(
+    history: InsertLearningHistory
+  ): Promise<LearningHistory>;
   createBreakSession(session: InsertBreakSession): Promise<BreakSession>;
   getLearningHistory(userId?: number): Promise<LearningHistory[]>;
   getBreakSessions(userId?: number): Promise<BreakSession[]>;
+  createVideo(data: { youtubeUrl: string }): Promise<any>;
+  updateVideo(id: number, data: Partial<Video>): Promise<Video | undefined>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesBySession(sessionId: string): Promise<Message[]>;
+  clearMessagesBySession(sessionId: string): Promise<void>;
+}
+
+interface Video {
+  id: number;
+  youtubeUrl: string;
+  title: string;
+  transcript: string;
+  flashcards: any[];
+  quizQuestions: any[];
 }
 
 export class MemStorage implements IStorage {
@@ -27,6 +46,10 @@ export class MemStorage implements IStorage {
   private currentUserId: number;
   private currentHistoryId: number;
   private currentSessionId: number;
+  private videos: any[];
+  private videoId: number;
+  private messages: Map<number, Message>;
+  private currentMessageId: number;
 
   constructor() {
     this.users = new Map();
@@ -35,6 +58,10 @@ export class MemStorage implements IStorage {
     this.currentUserId = 1;
     this.currentHistoryId = 1;
     this.currentSessionId = 1;
+    this.videos = [];
+    this.videoId = 1;
+    this.messages = new Map();
+    this.currentMessageId = 1;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -43,7 +70,7 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.username === username
     );
   }
 
@@ -54,30 +81,34 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async createLearningHistory(insertHistory: InsertLearningHistory): Promise<LearningHistory> {
+  async createLearningHistory(
+    insertHistory: InsertLearningHistory
+  ): Promise<LearningHistory> {
     const id = this.currentHistoryId++;
-    const history: LearningHistory = { 
+    const history: LearningHistory = {
       id,
       subject: insertHistory.subject,
       userId: insertHistory.userId ?? null,
       videoTitle: insertHistory.videoTitle ?? null,
       bookTitle: insertHistory.bookTitle ?? null,
       duration: insertHistory.duration ?? null,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
     this.learningHistories.set(id, history);
     return history;
   }
 
-  async createBreakSession(insertSession: InsertBreakSession): Promise<BreakSession> {
+  async createBreakSession(
+    insertSession: InsertBreakSession
+  ): Promise<BreakSession> {
     const id = this.currentSessionId++;
-    const session: BreakSession = { 
+    const session: BreakSession = {
       id,
       userId: insertSession.userId ?? null,
       gameType: insertSession.gameType,
       duration: insertSession.duration,
       completed: insertSession.completed ?? null,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
     this.breakSessionsMap.set(id, session);
     return session;
@@ -85,16 +116,74 @@ export class MemStorage implements IStorage {
 
   async getLearningHistory(userId?: number): Promise<LearningHistory[]> {
     const histories = Array.from(this.learningHistories.values());
-    return userId 
-      ? histories.filter(h => h.userId === userId)
-      : histories;
+    return userId ? histories.filter((h) => h.userId === userId) : histories;
   }
 
   async getBreakSessions(userId?: number): Promise<BreakSession[]> {
     const sessions = Array.from(this.breakSessionsMap.values());
-    return userId 
-      ? sessions.filter(s => s.userId === userId)
-      : sessions;
+    return userId ? sessions.filter((s) => s.userId === userId) : sessions;
+  }
+
+  async createVideo(data: { youtubeUrl: string }) {
+    const video = {
+      id: this.videoId++,
+      youtubeUrl: data.youtubeUrl,
+      title: "",
+      transcript: "",
+      flashcards: [],
+      quizQuestions: [],
+    };
+    this.videos.push(video);
+    return Promise.resolve(video);
+  }
+
+  async updateVideo(
+    id: number,
+    data: Partial<Video>
+  ): Promise<Video | undefined> {
+    const videoIndex = this.videos.findIndex((v) => v.id === id);
+    if (videoIndex === -1) {
+      return undefined;
+    }
+
+    this.videos[videoIndex] = {
+      ...this.videos[videoIndex],
+      ...data,
+    };
+
+    return this.videos[videoIndex];
+  }
+
+  async getVideo(id: number): Promise<Video | undefined> {
+    return this.videos.find((v) => v.id === id);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const id = this.currentMessageId++;
+    const newMessage: Message = {
+      id,
+      ...message,
+      createdAt: new Date(),
+    };
+    this.messages.set(id, newMessage);
+    return newMessage;
+  }
+
+  async getMessagesBySession(sessionId: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter((message) => message.sessionId === sessionId)
+      .sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+  }
+
+  async clearMessagesBySession(sessionId: string): Promise<void> {
+    const messagesToDelete = Array.from(this.messages.entries())
+      .filter(([, message]) => message.sessionId === sessionId)
+      .map(([id]) => id);
+
+    messagesToDelete.forEach((id) => this.messages.delete(id));
   }
 }
 

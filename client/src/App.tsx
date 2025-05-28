@@ -10,6 +10,7 @@ import Pricing from "@/pages/Pricing";
 import Break from "@/pages/Break";
 import NotFound from "@/pages/not-found";
 import Revision from "./pages/Revision";
+import Chat from "@/pages/Chat";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/break" component={Break} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/revision" component={Revision} />{" "}
+      <Route path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>
   );
