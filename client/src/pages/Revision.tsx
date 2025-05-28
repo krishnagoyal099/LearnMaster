@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { generateContent } from "@/lib/api";
@@ -46,7 +45,10 @@ export default function Revision() {
 
   // Save video history to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("youtube-revision-history", JSON.stringify(videoHistory));
+    localStorage.setItem(
+      "youtube-revision-history",
+      JSON.stringify(videoHistory)
+    );
   }, [videoHistory]);
 
   const generateMutation = useMutation({
@@ -60,13 +62,17 @@ export default function Revision() {
   const extractVideoTitle = async (url: string): Promise<string> => {
     try {
       // Extract video ID from URL
-      const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+      const videoIdMatch = url.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/
+      );
       if (!videoIdMatch) return "Unknown Video";
-      
+
       const videoId = videoIdMatch[1];
-      
+
       // Fetch video title using YouTube oEmbed API
-      const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+      const response = await fetch(
+        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+      );
       if (response.ok) {
         const data = await response.json();
         return data.title || "Unknown Video";
@@ -78,18 +84,20 @@ export default function Revision() {
   };
 
   const addToHistory = async (youtubeUrl: string) => {
-    const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)?.[1];
+    const videoId = youtubeUrl.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/
+    )?.[1];
     if (!videoId) return;
 
     // Check if video already exists in history
-    const existingIndex = videoHistory.findIndex(item => item.id === videoId);
-    
+    const existingIndex = videoHistory.findIndex((item) => item.id === videoId);
+
     if (existingIndex >= 0) {
       // Move existing video to top
       const existingVideo = videoHistory[existingIndex];
       const updatedHistory = [
         { ...existingVideo, timestamp: Date.now() },
-        ...videoHistory.filter((_, index) => index !== existingIndex)
+        ...videoHistory.filter((_, index) => index !== existingIndex),
       ];
       setVideoHistory(updatedHistory);
     } else {
@@ -99,9 +107,9 @@ export default function Revision() {
         id: videoId,
         url: youtubeUrl,
         title,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      
+
       // Keep only the 20 most recent videos
       const updatedHistory = [newHistoryItem, ...videoHistory].slice(0, 20);
       setVideoHistory(updatedHistory);
@@ -120,7 +128,7 @@ export default function Revision() {
   };
 
   const removeFromHistory = (videoId: string) => {
-    setVideoHistory(prev => prev.filter(item => item.id !== videoId));
+    setVideoHistory((prev) => prev.filter((item) => item.id !== videoId));
   };
 
   const clearHistory = () => {
@@ -137,7 +145,7 @@ export default function Revision() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 1) {
       return "Just now";
     } else if (diffInHours < 24) {
@@ -150,13 +158,15 @@ export default function Revision() {
   return (
     <div className="min-h-screen gradient-bg">
       <Header />
-      
+
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar for History */}
         <div className="w-80 border-r border-white/10 bg-white/5 backdrop-blur-sm">
           <div className="p-6 border-b border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Study History</h2>
+              <h2 className="text-gray-900 dark:text-white text-lg font-semibold">
+                Study History
+              </h2>
               {videoHistory.length > 0 && (
                 <Button
                   variant="ghost"
@@ -169,14 +179,16 @@ export default function Revision() {
               )}
             </div>
           </div>
-          
+
           <ScrollArea className="h-[calc(100vh-12rem)]">
             <div className="p-4">
               {videoHistory.length === 0 ? (
-                <div className="text-center text-white/50 py-12">
+                <div className="text-center text-gray-600 dark:text-white/50 py-12">
                   <History className="h-8 w-8 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No study materials created yet</p>
-                  <p className="text-xs mt-1">Start by adding a YouTube video to generate revision content</p>
+                  <p className="text-xs mt-1">
+                    Start by adding a YouTube video to generate revision content
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -187,10 +199,10 @@ export default function Revision() {
                       className="group relative flex items-start gap-3 p-3 rounded-lg hover:bg-white/10 cursor-pointer transition-all duration-200"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white font-medium line-clamp-2 leading-tight mb-1">
+                        <p className="text-gray-900 dark:text-white text-sm font-medium line-clamp-2 leading-tight mb-1">
                           {item.title}
                         </p>
-                        <p className="text-xs text-white/50">
+                        <p className="text-gray-600 dark:text-white/50 text-xs">
                           {formatDate(item.timestamp)}
                         </p>
                       </div>
@@ -212,11 +224,10 @@ export default function Revision() {
             </div>
           </ScrollArea>
         </div>
-        
+
         {/* Main Content */}
         <div className="flex-1 flex flex-col items-center">
           <div className="w-full max-w-4xl mx-auto p-8 space-y-12">
-            
             {/* Header Section */}
             <div className="text-center space-y-6">
               <div className="flex items-center justify-center gap-4">
@@ -224,10 +235,13 @@ export default function Revision() {
                   <Brain className="h-10 w-10 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-white mb-2">
+                  <h1 className="text-gray-900 dark:text-white text-4xl font-bold mb-2">
                     Smart Revision Hub
                   </h1>
-                  <p className="text-white/80 text-lg">Convert educational videos into personalized study materials for effective revision</p>
+                  <p className="text-gray-700 dark:text-white/80 text-lg">
+                    Convert educational videos into personalized study materials
+                    for effective revision
+                  </p>
                 </div>
               </div>
             </div>
@@ -262,14 +276,15 @@ export default function Revision() {
             {(flashcards.length > 0 || quizQuestions.length > 0) && (
               <div className="w-full space-y-8">
                 <div className="text-center space-y-3">
-                  <h2 className="text-2xl font-semibold text-white">
-                    {currentMode === "flashcards" ? "Revision Flashcards" : "Knowledge Assessment"}
+                  <h2 className="text-gray-900 dark:text-white text-2xl font-semibold">
+                    {currentMode === "flashcards"
+                      ? "Revision Flashcards"
+                      : "Knowledge Assessment"}
                   </h2>
-                  <p className="text-white/70">
-                    {currentMode === "flashcards" 
+                  <p className="text-gray-700 dark:text-white/70">
+                    {currentMode === "flashcards"
                       ? `${flashcards.length} flashcards created for focused revision and memory retention`
-                      : `${quizQuestions.length} questions to evaluate your comprehension and identify knowledge gaps`
-                    }
+                      : `${quizQuestions.length} questions to evaluate your comprehension and identify knowledge gaps`}
                   </p>
                 </div>
 
