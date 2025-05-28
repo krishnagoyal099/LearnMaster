@@ -4,8 +4,19 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
 
 const app = express();
+
+// CORS middleware
+app.use(cors({
+  origin: process.env.NODE_ENV === 'development' ? true : ['https://your-production-domain.replit.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  optionsSuccessStatus: 200
+}));
+
 app.use(express.json({ limit: "5mb" })); // Increase JSON body limit to 2mb
 app.use(express.urlencoded({ limit: "5mb", extended: true })); // If you use urlencoded
 
@@ -57,9 +68,9 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Serve the app on localhost:5000
+  // Serve the app on 0.0.0.0:5000
   const port = 5000;
-  const host = "127.0.0.1";
+  const host = "0.0.0.0";
 
   server.listen(port, host, () => {
     log(`serving on http://${host}:${port}`);

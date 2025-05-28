@@ -34,15 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const validateToken = async (token: string) => {
     try {
-      const response = await fetch(API_ENDPOINTS.validateToken, {
+      const response = await fetch("/auth/validate-token", {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Accept": "application/json"
         },
+        credentials: "same-origin"
       });
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
       } else {
+        console.log("Token validation failed, removing token");
         localStorage.removeItem("token");
       }
     } catch (error) {
@@ -54,41 +57,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(API_ENDPOINTS.login, {
+      console.log("Attempting login for:", email);
+      console.log("Login URL:", "/auth/login");
+      
+      const response = await fetch("/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ email, password }),
+        credentials: "same-origin"
       });
 
+      console.log("Login response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Login failed");
+        const errorText = await response.text();
+        console.error("Login failed with status:", response.status, "Response:", errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: `Request failed with status ${response.status}` };
+        }
+        
+        throw new Error(errorData.error || "Login failed");
       }
 
       const { user, token } = await response.json();
       localStorage.setItem("token", token);
       setUser(user);
+      console.log("Login successful");
     } catch (error) {
-      throw new Error("Login failed");
+      console.error("Login error:", error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error("Network error: Unable to connect to server");
+      }
+      throw error;
     }
   };
 
   const signup = async (email: string, password: string, name: string) => {
     try {
-      const response = await fetch(API_ENDPOINTS.signup, {
+      console.log("Attempting signup for:", email);
+      console.log("Signup URL:", "/auth/signup");
+      
+      const response = await fetch("/auth/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ email, password, name }),
+        credentials: "same-origin"
       });
 
+      console.log("Signup response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Signup failed");
+        const errorText = await response.text();
+        console.error("Signup failed with status:", response.status, "Response:", errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: `Request failed with status ${response.status}` };
+        }
+        
+        throw new Error(errorData.error || "Signup failed");
       }
 
       const { user, token } = await response.json();
       localStorage.setItem("token", token);
       setUser(user);
+      console.log("Signup successful");
     } catch (error) {
-      throw new Error("Signup failed");
+      console.error("Signup error:", error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error("Network error: Unable to connect to server");
+      }
+      throw error;
     }
   };
 

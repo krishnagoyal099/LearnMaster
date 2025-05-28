@@ -12,6 +12,15 @@ import * as z from 'zod';
 import { extractYouTubeTranscript } from "./utils/youtubeTranscript";
 import { generateContentWithGemini } from "./utils/geminiClient";
 import { parseFlashcardsAndQuiz } from "./utils/flashcardParser";
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  password: string;
+}
 
 interface Video {
   id: number;
@@ -29,6 +38,134 @@ interface Video {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // In-memory user storage (in production, use a proper database)
+  const users: User[] = [];
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+  // Authentication routes
+  app.post("/auth/signup", async (req, res) => {
+    try {
+      console.log("Signup request received:", req.body);
+      const { email, password, name } = req.body;
+
+      if (!email || !password) {
+        console.log("Missing email or password");
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      if (password.length < 6) {
+        console.log("Password too short");
+        return res.status(400).json({ error: "Password must be at least 6 characters long" });
+      }
+
+      // Check if user already exists
+      const existingUser = users.find(user => user.email === email);
+      if (existingUser) {
+        console.log("User already exists:", email);
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user: User = {
+        id: Math.random().toString(36).substr(2, 9),
+        email,
+        name,
+        password: hashedPassword
+      };
+
+      users.push(user);
+      console.log("User created successfully:", user.email);
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        user: { id: user.id, email: user.email, name: user.name },
+        token
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/auth/login", async (req, res) => {
+    try {
+      console.log("Login request received:", req.body);
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        console.log("Missing email or password");
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      // Find user
+      const user = users.find(u => u.email === email);
+      if (!user) {
+        console.log("User not found:", email);
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Check password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        console.log("Invalid password for user:", email);
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      console.log("Login successful for user:", email);
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        user: { id: user.id, email: user.email, name: user.name },
+        token
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/auth/validate-token", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+      // Find user
+      const user = users.find(u => u.id === decoded.userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name
+      });
+    } catch (error) {
+      console.error("Token validation error:", error);
+      res.status(401).json({ error: "Invalid token" });
+    }
+  });
+
   // YouTube API search endpoint with enhanced functionality
   app.get("/api/youtube/search", async (req, res) => {
     try {
