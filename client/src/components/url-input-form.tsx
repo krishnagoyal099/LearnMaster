@@ -73,7 +73,7 @@ export function UrlInputForm({
       <CardContent className="p-8">
         <form onSubmit={form.handleSubmit(handleSubmit, handleError)} className="space-y-6">
           <div className="space-y-3">
-            <Label htmlFor="youtube-url" className="flex items-center gap-2 text-white font-medium">
+            <Label htmlFor="youtube-url" className="flex items-center gap-2 text-gray-800 dark:text-white font-medium">
               <Youtube className="h-4 w-4 text-red-400" />
               YouTube Video URL
             </Label>
@@ -82,19 +82,19 @@ export function UrlInputForm({
                 id="youtube-url"
                 type="url"
                 placeholder="https://www.youtube.com/watch?v=example"
-                className="w-full px-4 py-4 bg-white/10 border border-white/30 text-white placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 text-sm"
+                className="w-full px-4 py-4 bg-white/10 dark:bg-white/10 border border-gray-300 dark:border-white/30 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 text-sm"
                 {...form.register("youtubeUrl")}
                 disabled={isLoading}
               />
             </div>
-            <p className="text-xs text-white/60 flex items-center gap-1">
-              <span className="w-1 h-1 bg-white/40 rounded-full"></span>
+            <p className="text-xs text-gray-600 dark:text-white/60 flex items-center gap-1">
+              <span className="w-1 h-1 bg-gray-400 dark:bg-white/40 rounded-full"></span>
               Paste any YouTube video URL to generate study materials
             </p>
           </div>
 
           <div className="space-y-3">
-            <Label className="text-white font-medium text-sm">Study Mode</Label>
+            <Label className="text-gray-800 dark:text-white font-medium text-sm">Study Mode</Label>
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 type="button"
@@ -102,7 +102,7 @@ export function UrlInputForm({
                 className={`py-4 px-4 rounded-xl font-medium transition-all duration-200 ${
                   currentMode === 'flashcards' 
                     ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                    : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                    : 'bg-white/80 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-300 dark:border-white/20 hover:bg-white dark:hover:bg-white/20'
                 }`}
               >
                 <Brain className="w-4 h-4 mr-2" />
@@ -114,7 +114,7 @@ export function UrlInputForm({
                 className={`py-4 px-4 rounded-xl font-medium transition-all duration-200 ${
                   currentMode === 'quiz' 
                     ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' 
-                    : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                    : 'bg-white/80 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-300 dark:border-white/20 hover:bg-white dark:hover:bg-white/20'
                 }`}
               >
                 <FileText className="w-4 h-4 mr-2" />
