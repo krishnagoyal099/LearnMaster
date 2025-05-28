@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "email": "meow@gmail.com",
+      "name": "meow@gmail.com",
+      "password": "$2b$10$qPPOnnrfaI28x74iADscse.Q9eNB5/TyOrRqeSyWwJWYD0a/mciF6",
+      "id": 1
+    }
+  ],
+  "learningHistories": [],
+  "breakSessions": [],
+  "messages": [],
+  "currentUserId": 2,
+  "currentHistoryId": 1,
+  "currentSessionId": 1,
+  "currentMessageId": 1,
+  "videos": [],
+  "videoId": 1
+}

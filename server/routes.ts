@@ -15,13 +15,6 @@ import { parseFlashcardsAndQuiz } from "./utils/flashcardParser";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  password: string;
-}
-
 interface Video {
   id: number;
   youtubeUrl: string;
@@ -38,8 +31,6 @@ interface Video {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // In-memory user storage (in production, use a proper database)
-  const users: User[] = [];
   const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
   // Authentication routes
@@ -59,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user already exists
-      const existingUser = users.find(user => user.email === email);
+      const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         console.log("User already exists:", email);
         return res.status(400).json({ error: "User already exists" });
@@ -69,14 +60,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create user
-      const user: User = {
-        id: Math.random().toString(36).substr(2, 9),
+      const user = await storage.createUser({
         email,
         name,
         password: hashedPassword
-      };
+      });
 
-      users.push(user);
       console.log("User created successfully:", user.email);
 
       // Generate JWT token
@@ -107,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Find user
-      const user = users.find(u => u.email === email);
+      const user = await storage.getUserByEmail(email);
       if (!user) {
         console.log("User not found:", email);
         return res.status(401).json({ error: "Invalid credentials" });
@@ -150,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
 
       // Find user
-      const user = users.find(u => u.id === decoded.userId);
+      const user = await storage.getUserById(decoded.userId);
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }

@@ -13,6 +13,8 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
   password: text("password").notNull(),
 });
 
@@ -42,6 +44,16 @@ export const breakSessions = pgTable("break_sessions", {
   completed: boolean("completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Type exports
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type LearningHistory = typeof learningHistory.$inferSelect;
+export type InsertLearningHistory = typeof learningHistory.$inferInsert;
+export type BreakSession = typeof breakSessions.$inferSelect;
+export type InsertBreakSession = typeof breakSessions.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
 
 export const searchHistory = pgTable("search_history", {
   id: serial("id").primaryKey(),
