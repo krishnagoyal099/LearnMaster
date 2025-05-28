@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
+import { Header } from "@/components/Header";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -37,10 +38,28 @@ export default function Chat() {
         sessionId,
       });
 
+      // Show typing indicator with more realistic timing
+      setIsTyping(true);
+      
+      // Simulate thinking time for better UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Get AI response from Gemini
+      const geminiResponse = await apiRequest("POST", "/api/gemini-chat", {
+        message: content,
+      });
+      
+      const geminiData = await geminiResponse.json();
+      
+      // Process and clean up the response
+      const cleanedReply = geminiData.reply
+        .replace(/^\s*Response:\s*/i, '') // Remove "Response:" prefix if present
+        .trim();
+      
       // Send AI message
       return await apiRequest("POST", "/api/messages", {
-        content: "AI response here", // Replace with actual Gemini response
-        role: "assistant",
+        content: cleanedReply,
+        role: "assistant", 
         sessionId,
       });
     },
@@ -48,9 +67,11 @@ export default function Chat() {
       queryClient.invalidateQueries({
         queryKey: [`/api/messages/${sessionId}`],
       });
-      setMessage(""); // Clear input
+      setIsTyping(false);
     },
     onError: (error) => {
+      console.error("Send message error:", error);
+      setIsTyping(false);
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -89,22 +110,6 @@ export default function Chat() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Add message sending function
-  const sendMessage = async () => {
-    if (!message.trim()) return;
-
-    try {
-      await sendMessageMutation.mutateAsync(message);
-      setMessage(""); // Clear input after sending
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleSendMessage = async () => {
     const content = message.trim();
     if (!content || sendMessageMutation.isPending) return;
@@ -117,7 +122,11 @@ export default function Chat() {
       textareaRef.current.style.height = "auto";
     }
 
-    await sendMessageMutation.mutateAsync(content);
+    try {
+      await sendMessageMutation.mutateAsync(content);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -142,9 +151,10 @@ export default function Chat() {
     message.trim() && !isOverLimit && !sendMessageMutation.isPending;
 
   return (
-    <div className="h-full bg-[hsl(var(--light-bg))] dark:bg-[hsl(var(--dark-bg))] text-[hsl(var(--light-text))] dark:text-[hsl(var(--dark-text))] transition-colors duration-200">
+    <div className="min-h-screen bg-[hsl(var(--light-bg))] dark:bg-[hsl(var(--dark-bg))] text-[hsl(var(--light-text))] dark:text-[hsl(var(--dark-text))] transition-colors duration-200">
+      <Header />
       {/* Main Chat Area */}
-      <main className="h-full pb-20 overflow-hidden">
+      <main className="h-[calc(100vh-4rem)] pb-20 overflow-hidden">
         <div className="h-full max-w-4xl mx-auto flex flex-col">
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
             {/* Welcome Message */}
@@ -207,19 +217,14 @@ export default function Chat() {
               <textarea
                 ref={textareaRef}
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
                 className="flex-1 min-h-[44px] max-h-32 rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
               />
               <Button
-                onClick={sendMessage}
-                disabled={!message.trim() || isTyping}
+                onClick={handleSendMessage}
+                disabled={!canSend}
               >
                 Send
               </Button>

@@ -8,7 +8,7 @@ interface LearningInterfaceProps {
   subject: string;
 }
 
-type TimePreference = "quick" | "comprehensive" | null;
+type TimePreference = "quick" | "one-shot" | "playlist" | null;
 
 export function LearningInterface({ subject }: LearningInterfaceProps) {
   const [timePreference, setTimePreference] = useState<TimePreference>(null);
@@ -19,7 +19,7 @@ export function LearningInterface({ subject }: LearningInterfaceProps) {
         {/* Time Preference Selection */}
         <div className="mb-6 text-center">
           <h2 className="text-xl font-semibold text-foreground mb-4">
-            How much time do you have?
+            What type of learning do you prefer?
           </h2>
           <div className="flex justify-center space-x-4">
             <Button
@@ -31,14 +31,20 @@ export function LearningInterface({ subject }: LearningInterfaceProps) {
               Quick Learning (15-30 min)
             </Button>
             <Button
-              variant={
-                timePreference === "comprehensive" ? "default" : "outline"
-              }
-              onClick={() => setTimePreference("comprehensive")}
+              variant={timePreference === "one-shot" ? "default" : "outline"}
+              onClick={() => setTimePreference("one-shot")}
               className="px-6 py-3"
             >
               <Bookmark className="mr-2 h-4 w-4" />
-              Comprehensive Learning (1+ hours)
+              One Shot Tutorial
+            </Button>
+            <Button
+              variant={timePreference === "playlist" ? "default" : "outline"}
+              onClick={() => setTimePreference("playlist")}
+              className="px-6 py-3"
+            >
+              <Bookmark className="mr-2 h-4 w-4" />
+              Full Playlist
             </Button>
           </div>
         </div>

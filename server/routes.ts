@@ -8,7 +8,7 @@ import {
 } from "@shared/schema";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { YoutubeTranscript } from "youtube-transcript";
-
+import * as z from 'zod';
 import { extractYouTubeTranscript } from "./utils/youtubeTranscript";
 import { generateContentWithGemini } from "./utils/geminiClient";
 import { parseFlashcardsAndQuiz } from "./utils/flashcardParser";
@@ -46,14 +46,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Determine search parameters based on time preference
-      const maxResults = timePreference === "quick" ? 8 : 12;
-      const duration = timePreference === "quick" ? "short" : "medium";
+      let maxResults = 12;
+      let duration = "medium";
+      let enhancedQuery = query;
 
-      // Enhanced search query with better filtering
-      const enhancedQuery =
-        timePreference === "quick"
-          ? `${query} tutorial beginner crash course learn`
-          : `${query} complete course tutorial programming full`;
+      switch (timePreference) {
+        case "quick":
+          maxResults = 8;
+          duration = "short";
+          enhancedQuery = `${query} tutorial beginner crash course learn quick`;
+          break;
+        case "one-shot":
+          maxResults = 6;
+          duration = "medium";
+          enhancedQuery = `${query} complete tutorial one video full course`;
+          break;
+        case "playlist":
+          maxResults = 15;
+          duration = "any";
+          enhancedQuery = `${query} playlist series course tutorial programming`;
+          break;
+        default:
+          enhancedQuery = `${query} tutorial programming learn`;
+      }
 
       const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
       searchUrl.searchParams.set("part", "snippet");
@@ -132,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return null; // Skip this video
           }
 
-          // Determine difficulty based on enhanced criteria
+          // Determine difficulty based on enhanced criteria and time preference
           let difficulty: "Beginner" | "Intermediate" | "Advanced" = "Beginner";
 
           if (
@@ -146,16 +161,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             title.includes("intermediate") ||
             title.includes("complete") ||
             title.includes("full course") ||
-            totalMinutes > 45
+            totalMinutes > 45 ||
+            timePreference === "one-shot"
           ) {
             difficulty = "Intermediate";
           } else if (
             title.includes("beginner") ||
             title.includes("crash course") ||
             title.includes("basics") ||
-            title.includes("intro")
+            title.includes("intro") ||
+            timePreference === "quick"
           ) {
             difficulty = "Beginner";
+          }
+
+          // Special handling for playlist preference
+          if (
+            timePreference === "playlist" &&
+            (title.includes("playlist") ||
+              title.includes("series") ||
+              channelTitle.includes("academy") ||
+              channelTitle.includes("course"))
+          ) {
+            difficulty = "Intermediate";
           }
 
           return {
@@ -564,6 +592,100 @@ Focus on practical, well-known books that are actually available and useful for 
     }
   });
 
+  // Gemini AI chat endpoint
+  app.post("/api/gemini-chat", async (req, res) => {
+    try {
+      const { message } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+      if (!GEMINI_API_KEY) {
+        return res.status(500).json({ error: "Gemini API key not configured" });
+      }
+
+      // Enhanced prompt for better, more focused responses
+      const enhancedPrompt = `You are LearnMaster AI, an intelligent learning assistant focused on education and skill development. 
+
+User message: "${message}"
+
+Please provide a helpful, concise, and well-structured response. Follow these guidelines:
+- Keep responses focused and practical
+- Use clear, easy-to-understand language
+- Include examples when explaining concepts
+- Format code snippets with proper syntax highlighting
+- For learning topics, provide step-by-step guidance
+- Be encouraging and supportive
+- Keep responses under 500 words unless detailed explanation is specifically requested
+
+Response:`;
+
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: enhancedPrompt,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+              candidateCount: 1,
+            },
+            safetySettings: [
+              {
+                category: "HARM_CATEGORY_HARASSMENT",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+              {
+                category: "HARM_CATEGORY_HATE_SPEECH",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+              {
+                category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+              {
+                category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+            ],
+          }),
+        }
+      );
+
+      if (!geminiResponse.ok) {
+        throw new Error(`Gemini API error: ${geminiResponse.status}`);
+      }
+
+      const geminiData = await geminiResponse.json();
+      const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!reply) {
+        throw new Error("No response from Gemini AI");
+      }
+
+      res.json({ reply });
+    } catch (error) {
+      console.error("Gemini chat error:", error);
+      res.status(500).json({ error: "Failed to get AI response" });
+    }
+  });
+
   // Add new endpoints for suggestions, search history, and favorites
   app.get("/api/suggestions", async (req, res) => {
     // ... your new suggestions endpoint code ...
@@ -608,9 +730,24 @@ Focus on practical, well-known books that are actually available and useful for 
     }
   });
 
+  // Get messages by session ID
+  app.get("/api/messages/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getMessagesBySession(sessionId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
   // New messages endpoint
   app.post("/api/messages", async (req, res) => {
     try {
+      // Log the request body for debugging
+      console.log("Message request body:", req.body);
+
       // Validate input
       const validatedData = insertMessageSchema.parse(req.body);
 
@@ -618,13 +755,35 @@ Focus on practical, well-known books that are actually available and useful for 
       const userMessage = await storage.createMessage(validatedData);
 
       res.json(userMessage);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error creating message:", error.message);
+      } else {
+        console.error("Error creating message:", error);
+      }
+
+      if (error instanceof z.ZodError) {
+        res
+          .status(400)
+          .json({ error: "Invalid message data", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+  });
+
+  // Delete messages by session ID
+  app.delete("/api/messages/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      await storage.deleteMessagesBySession(sessionId);
+      res.json({ success: true });
     } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      console.error("Error deleting messages:", error);
+      res.status(500).json({ error: "Failed to delete messages" });
     }
   });
 
   const httpServer = createServer(app);
   return httpServer;
 }
-

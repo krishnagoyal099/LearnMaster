@@ -10,7 +10,7 @@ export interface YouTubeVideo {
 
 export async function getYouTubeVideos(
   subject: string, 
-  timePreference: 'quick' | 'comprehensive' | null
+  timePreference: 'quick' | 'one-shot' | 'playlist' | null
 ): Promise<YouTubeVideo[]> {
   try {
     const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(subject)}&type=${timePreference || 'all'}`, {

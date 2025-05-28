@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 
 interface VideoResourcesProps {
   subject: string;
-  timePreference: 'quick' | 'comprehensive' | null;
+  timePreference: 'quick' | 'one-shot' | 'playlist' | null;
 }
 
 export function VideoResources({ subject, timePreference }: VideoResourcesProps) {

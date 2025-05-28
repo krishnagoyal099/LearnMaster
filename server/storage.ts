@@ -185,6 +185,22 @@ export class MemStorage implements IStorage {
 
     messagesToDelete.forEach((id) => this.messages.delete(id));
   }
+
+  async deleteMessagesBySession(sessionId: string): Promise<void> {
+    try {
+      // Create a new Map with filtered messages
+      const filteredMessages = new Map(
+        Array.from(this.messages.entries()).filter(
+          ([_, message]) => message.sessionId !== sessionId
+        )
+      );
+
+      this.messages = filteredMessages;
+    } catch (error) {
+      console.error("Error deleting messages:", error);
+      throw new Error("Failed to delete messages");
+    }
+  }
 }
 
 export const storage = new MemStorage();
