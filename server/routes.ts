@@ -49,35 +49,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let maxResults = 12;
       let duration = "medium";
       let enhancedQuery = query;
+      let searchType = "video";
 
       switch (timePreference) {
         case "quick":
-          maxResults = 8;
-          duration = "short";
-          enhancedQuery = `${query} tutorial beginner crash course learn quick`;
+          maxResults = 10;
+          duration = "medium"; // Changed from "short" to avoid YouTube Shorts
+          enhancedQuery = `${query} tutorial crash course beginner guide how to learn -shorts -short`;
           break;
         case "one-shot":
-          maxResults = 6;
-          duration = "medium";
-          enhancedQuery = `${query} complete tutorial one video full course`;
+          maxResults = 8;
+          duration = "long";
+          enhancedQuery = `${query} complete tutorial full course comprehensive guide one video -shorts -short`;
           break;
         case "playlist":
           maxResults = 15;
           duration = "any";
-          enhancedQuery = `${query} playlist series course tutorial programming`;
+          searchType = "playlist"; // Search for playlists instead of individual videos
+          enhancedQuery = `${query} playlist course series tutorial learning -shorts`;
           break;
         default:
-          enhancedQuery = `${query} tutorial programming learn`;
+          enhancedQuery = `${query} tutorial programming learn -shorts -short`;
       }
 
       const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
       searchUrl.searchParams.set("part", "snippet");
       searchUrl.searchParams.set("q", enhancedQuery);
-      searchUrl.searchParams.set("type", "video");
+      searchUrl.searchParams.set("type", searchType);
       searchUrl.searchParams.set("maxResults", maxResults.toString());
       searchUrl.searchParams.set("order", "relevance");
-      searchUrl.searchParams.set("videoDuration", duration);
-      searchUrl.searchParams.set("videoDefinition", "high");
+      if (searchType === "video") {
+        searchUrl.searchParams.set("videoDuration", duration);
+        searchUrl.searchParams.set("videoDefinition", "high");
+      }
       searchUrl.searchParams.set("relevanceLanguage", "en");
       searchUrl.searchParams.set("key", API_KEY);
 
@@ -89,66 +93,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
 
-      // Get video details for duration
-      const videoIds = data.items.map((item: any) => item.id.videoId).join(",");
-      const detailsUrl = new URL(
-        "https://www.googleapis.com/youtube/v3/videos"
-      );
-      detailsUrl.searchParams.set("part", "contentDetails,statistics");
-      detailsUrl.searchParams.set("id", videoIds);
-      detailsUrl.searchParams.set("key", API_KEY);
+      let videos;
 
-      const detailsResponse = await fetch(detailsUrl.toString());
-      const detailsData = await detailsResponse.json();
+      if (timePreference === "playlist") {
+        // Handle playlist results
+        videos = await Promise.all(
+          data.items
+            .map(async (item: any) => {
+              const title = item.snippet.title.toLowerCase();
+              const description = item.snippet.description?.toLowerCase() || "";
+              const channelTitle = item.snippet.channelTitle.toLowerCase();
 
-      const videos = data.items
-        .map((item: any, index: number) => {
-          const details = detailsData.items?.[index];
-          const duration = details?.contentDetails?.duration || "PT0M0S";
-          const views = details?.statistics?.viewCount || "0";
+              // Filter out irrelevant playlists
+              const irrelevantKeywords = [
+                "music", "song", "funny", "meme", "reaction", "unboxing", 
+                "vlog", "shorts", "compilation", "best of", "top 10"
+              ];
+              const isIrrelevant = irrelevantKeywords.some(
+                (keyword) =>
+                  title.includes(keyword) || description.includes(keyword)
+              );
 
-          // Parse ISO 8601 duration to readable format
-          const durationMatch = duration.match(
-            /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/
-          );
-          const hours = durationMatch?.[1] || "0";
-          const minutes = durationMatch?.[2] || "0";
-          const seconds = durationMatch?.[3] || "0";
-          const formattedDuration =
-            hours !== "0"
-              ? `${hours}:${minutes.padStart(2, "0")}:${seconds.padStart(
-                  2,
-                  "0"
-                )}`
-              : `${minutes}:${seconds.padStart(2, "0")}`;
+              if (isIrrelevant) {
+                return null;
+              }
+
+              // Fetch videos from this playlist
+              try {
+                const playlistVideosUrl = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
+                playlistVideosUrl.searchParams.set("part", "snippet");
+                playlistVideosUrl.searchParams.set("playlistId", item.id.playlistId);
+                playlistVideosUrl.searchParams.set("maxResults", "20");
+                playlistVideosUrl.searchParams.set("key", API_KEY);
+
+                const playlistResponse = await fetch(playlistVideosUrl.toString());
+                if (!playlistResponse.ok) {
+                  throw new Error("Failed to fetch playlist videos");
+                }
+
+                const playlistData = await playlistResponse.json();
+                const playlistVideos = playlistData.items?.map((playlistItem: any) => ({
+                  id: playlistItem.snippet.resourceId.videoId,
+                  title: playlistItem.snippet.title,
+                  channel: playlistItem.snippet.channelTitle,
+                  duration: "Video",
+                  thumbnail: playlistItem.snippet.thumbnails.medium.url,
+                  difficulty: "Intermediate",
+                  views: "Playlist Video",
+                  isPlaylistVideo: true,
+                  playlistId: item.id.playlistId,
+                  playlistTitle: item.snippet.title,
+                })) || [];
+
+                // Determine difficulty for playlist
+                let difficulty: "Beginner" | "Intermediate" | "Advanced" = "Beginner";
+                if (title.includes("advanced") || title.includes("expert") || 
+                    title.includes("master") || title.includes("professional")) {
+                  difficulty = "Advanced";
+                } else if (title.includes("intermediate") || title.includes("beyond basic") ||
+                           title.includes("next level") || channelTitle.includes("pro")) {
+                  difficulty = "Intermediate";
+                }
+
+                return {
+                  id: item.id.playlistId,
+                  title: item.snippet.title,
+                  channel: item.snippet.channelTitle,
+                  duration: "Playlist",
+                  thumbnail: item.snippet.thumbnails.medium.url,
+                  difficulty,
+                  views: `${playlistVideos.length} videos`,
+                  isPlaylist: true,
+                  playlistVideos: playlistVideos,
+                };
+              } catch (error) {
+                console.error("Error fetching playlist videos:", error);
+                return {
+                  id: item.id.playlistId,
+                  title: item.snippet.title,
+                  channel: item.snippet.channelTitle,
+                  duration: "Playlist",
+                  thumbnail: item.snippet.thumbnails.medium.url,
+                  difficulty: "Intermediate",
+                  views: "Playlist",
+                  isPlaylist: true,
+                  playlistVideos: [],
+                };
+              }
+            })
+        );
+        videos = videos.filter((video) => video !== null);
+      } else {
+        // Handle individual video results
+        const videoIds = data.items.map((item: any) => item.id.videoId).join(",");
+        const detailsUrl = new URL(
+          "https://www.googleapis.com/youtube/v3/videos"
+        );
+        detailsUrl.searchParams.set("part", "contentDetails,statistics");
+        detailsUrl.searchParams.set("id", videoIds);
+        detailsUrl.searchParams.set("key", API_KEY);
+
+        const detailsResponse = await fetch(detailsUrl.toString());
+        const detailsData = await detailsResponse.json();
+
+        videos = data.items
+          .map((item: any, index: number) => {
+            const details = detailsData.items?.[index];
+            const duration = details?.contentDetails?.duration || "PT0M0S";
+            const views = details?.statistics?.viewCount || "0";
+
+            // Parse ISO 8601 duration to readable format
+            const durationMatch = duration.match(
+              /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/
+            );
+            const hours = durationMatch?.[1] || "0";
+            const minutes = durationMatch?.[2] || "0";
+            const seconds = durationMatch?.[3] || "0";
+            const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
+            
+            // Filter out shorts (videos under 1 minute) and very long videos for quick learning
+            if (timePreference === "quick" && (totalMinutes < 1 || totalMinutes > 30)) {
+              return null;
+            }
+            
+            // For one-shot, prefer longer comprehensive videos
+            if (timePreference === "one-shot" && totalMinutes < 10) {
+              return null;
+            }
+
+            const formattedDuration =
+              hours !== "0"
+                ? `${hours}:${minutes.padStart(2, "0")}:${seconds.padStart(
+                    2,
+                    "0"
+                  )}`
+                : `${minutes}:${seconds.padStart(2, "0")}`;
 
           // Enhanced filtering and difficulty detection
-          const title = item.snippet.title.toLowerCase();
-          const description = item.snippet.description?.toLowerCase() || "";
-          const channelTitle = item.snippet.channelTitle.toLowerCase();
-          const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
+            const title = item.snippet.title.toLowerCase();
+            const description = item.snippet.description?.toLowerCase() || "";
+            const channelTitle = item.snippet.channelTitle.toLowerCase();
 
-          // Skip videos that seem irrelevant
-          const irrelevantKeywords = [
-            "music",
-            "song",
-            "funny",
-            "meme",
-            "reaction",
-            "unboxing",
-            "vlog",
-          ];
-          const isIrrelevant = irrelevantKeywords.some(
-            (keyword) =>
-              title.includes(keyword) || description.includes(keyword)
-          );
+            // Skip videos that seem irrelevant or are shorts
+            const irrelevantKeywords = [
+              "music", "song", "funny", "meme", "reaction", "unboxing", 
+              "vlog", "shorts", "short", "#shorts", "60 seconds", "1 minute",
+              "quick tip", "life hack", "compilation", "best moments"
+            ];
+            const isIrrelevant = irrelevantKeywords.some(
+              (keyword) =>
+                title.includes(keyword) || description.includes(keyword)
+            );
 
-          if (isIrrelevant) {
-            return null; // Skip this video
-          }
+            if (isIrrelevant) {
+              return null; // Skip this video
+            }
 
-          // Determine difficulty based on enhanced criteria and time preference
-          let difficulty: "Beginner" | "Intermediate" | "Advanced" = "Beginner";
+            // Prefer educational channels and tutorial content
+            const educationalKeywords = [
+              "tutorial", "course", "learn", "guide", "how to", "explained",
+              "introduction", "basics", "fundamentals", "programming", "coding"
+            ];
+            const isEducational = educationalKeywords.some(
+              (keyword) =>
+                title.includes(keyword) || description.includes(keyword) ||
+                channelTitle.includes(keyword)
+            );
+
+            // Skip non-educational content for learning purposes
+            if (!isEducational && timePreference !== null) {
+              return null;
+            }
+
+            // Determine difficulty based on enhanced criteria and time preference
+            let difficulty: "Beginner" | "Intermediate" | "Advanced" = "Beginner";
 
           if (
             title.includes("advanced") ||
@@ -186,17 +304,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
             difficulty = "Intermediate";
           }
 
-          return {
-            id: item.id.videoId,
-            title: item.snippet.title,
-            channel: item.snippet.channelTitle,
-            duration: formattedDuration,
-            thumbnail: item.snippet.thumbnails.medium.url,
-            difficulty,
-            views: parseInt(views).toLocaleString() + " views",
-          };
-        })
-        .filter((video) => video !== null); // Remove filtered out videos
+          // Enhanced difficulty detection
+            if (title.includes("advanced") || title.includes("expert") || 
+                title.includes("master") || title.includes("professional") ||
+                totalMinutes > 120) {
+              difficulty = "Advanced";
+            } else if (title.includes("intermediate") || title.includes("beyond basic") ||
+                       title.includes("next level") || channelTitle.includes("pro") ||
+                       (totalMinutes > 30 && totalMinutes <= 120)) {
+              difficulty = "Intermediate";
+            } else if (title.includes("beginner") || title.includes("intro") ||
+                       title.includes("basics") || title.includes("fundamentals") ||
+                       title.includes("getting started") || totalMinutes <= 30) {
+              difficulty = "Beginner";
+            }
+
+            // Adjust difficulty based on time preference
+            if (timePreference === "quick") {
+              difficulty = "Beginner"; // Quick videos are usually beginner-friendly
+            } else if (timePreference === "one-shot" && totalMinutes > 60) {
+              difficulty = difficulty === "Beginner" ? "Intermediate" : difficulty;
+            }
+
+            return {
+              id: item.id.videoId,
+              title: item.snippet.title,
+              channel: item.snippet.channelTitle,
+              duration: formattedDuration,
+              thumbnail: item.snippet.thumbnails.medium.url,
+              difficulty,
+              views: parseInt(views).toLocaleString() + " views",
+            };
+          })
+          .filter((video) => video !== null); // Remove filtered out videos
+      }
 
       res.json(videos);
     } catch (error) {

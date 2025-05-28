@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Brain, FileText } from "lucide-react";
+import { Loader2, Brain, FileText, Youtube } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -22,15 +23,29 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface UrlInputFormProps {
-  onSubmit: (youtubeUrl: string) => void;
-  isLoading?: boolean;
-  onModeChange?: (mode: 'flashcards' | 'quiz') => void;
-  currentMode?: 'flashcards' | 'quiz';
+  onSubmit: (url: string) => void;
+  isLoading: boolean;
+  onModeChange: (mode: "flashcards" | "quiz") => void;
+  currentMode: "flashcards" | "quiz";
+  defaultValue?: string;
 }
 
-export function UrlInputForm({ onSubmit, isLoading = false, onModeChange, currentMode = 'flashcards' }: UrlInputFormProps) {
+export function UrlInputForm({
+  onSubmit,
+  isLoading,
+  onModeChange,
+  currentMode,
+  defaultValue = "",
+}: UrlInputFormProps) {
+  const [url, setUrl] = useState(defaultValue);
+
+  // Update url when defaultValue changes
+  useEffect(() => {
+    setUrl(defaultValue);
+  }, [defaultValue]);
+
   const { toast } = useToast();
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,69 +69,69 @@ export function UrlInputForm({ onSubmit, isLoading = false, onModeChange, curren
   };
 
   return (
-    <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+    <Card className="bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
       <CardContent className="p-8">
         <form onSubmit={form.handleSubmit(handleSubmit, handleError)} className="space-y-6">
-          <div>
-            <Label htmlFor="youtube-url" className="block text-sm font-medium text-white mb-2">
+          <div className="space-y-3">
+            <Label htmlFor="youtube-url" className="flex items-center gap-2 text-white font-medium">
+              <Youtube className="h-4 w-4 text-red-400" />
               YouTube Video URL
             </Label>
             <div className="relative">
               <Input
                 id="youtube-url"
                 type="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="w-full px-4 py-3 pl-12 bg-white/10 border border-white/20 text-white placeholder:text-white/60 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                placeholder="https://www.youtube.com/watch?v=example"
+                className="w-full px-4 py-4 bg-white/10 border border-white/30 text-white placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 text-sm"
                 {...form.register("youtubeUrl")}
                 disabled={isLoading}
               />
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                <svg className="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-              </div>
             </div>
-            <p className="text-sm text-blue-200/80 mt-2">
-              Enter a valid YouTube URL to extract the video transcript
+            <p className="text-xs text-white/60 flex items-center gap-1">
+              <span className="w-1 h-1 bg-white/40 rounded-full"></span>
+              Paste any YouTube video URL to generate study materials
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <Button 
-              type="button"
-              onClick={() => onModeChange?.('flashcards')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
-                currentMode === 'flashcards' 
-                  ? 'bg-blue-500 text-white shadow-lg' 
-                  : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-              }`}
-            >
-              <Brain className="w-4 h-4 mr-2" />
-              Memory Cards
-            </Button>
-            <Button 
-              type="button"
-              onClick={() => onModeChange?.('quiz')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
-                currentMode === 'quiz' 
-                  ? 'bg-purple-500 text-white shadow-lg' 
-                  : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-              }`}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Quiz
-            </Button>
+          <div className="space-y-3">
+            <Label className="text-white font-medium text-sm">Study Mode</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                type="button"
+                onClick={() => onModeChange?.('flashcards')}
+                className={`py-4 px-4 rounded-xl font-medium transition-all duration-200 ${
+                  currentMode === 'flashcards' 
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                    : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                }`}
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Memory Cards
+              </Button>
+              <Button 
+                type="button"
+                onClick={() => onModeChange?.('quiz')}
+                className={`py-4 px-4 rounded-xl font-medium transition-all duration-200 ${
+                  currentMode === 'quiz' 
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' 
+                    : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                }`}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Practice Quiz
+              </Button>
+            </div>
           </div>
 
           <Button 
             type="submit" 
             disabled={isLoading || !form.watch("youtubeUrl")}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:transform-none"
+            className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white py-4 px-6 rounded-xl font-medium hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:transform-none disabled:hover:scale-100"
           >
             <span className="flex items-center justify-center space-x-2">
               {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
               <span>
-                {isLoading ? "Generating..." : "Generate"}
+                {isLoading ? "Generating Study Materials..." : "Generate Study Materials"}
               </span>
             </span>
           </Button>

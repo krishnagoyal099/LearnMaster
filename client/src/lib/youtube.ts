@@ -6,6 +6,11 @@ export interface YouTubeVideo {
   thumbnail: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   views: string;
+  isPlaylist?: boolean;
+  playlistVideos?: YouTubeVideo[];
+  isPlaylistVideo?: boolean;
+  playlistId?: string;
+  playlistTitle?: string;
 }
 
 export async function getYouTubeVideos(
