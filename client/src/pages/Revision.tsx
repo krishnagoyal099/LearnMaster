@@ -8,10 +8,8 @@ import { QuizStack } from "@/components/quiz-stack";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { History, Play, Trash2, BookOpen, Brain } from "lucide-react";
+import { History, Trash2, Brain } from "lucide-react";
 import type {
   Flashcard as FlashcardType,
   QuizQuestion as QuizQuestionType,
@@ -152,145 +150,145 @@ export default function Revision() {
   return (
     <div className="min-h-screen gradient-bg">
       <Header />
-      <SidebarProvider>
-        <div className="flex h-[calc(100vh-4rem)]">
-          <Sidebar className="border-r border-white/10 bg-gray-900/95 backdrop-blur-xl w-64">
-            <SidebarHeader className="p-4 border-b border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-medium text-white/90">History</h2>
-                {videoHistory.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearHistory}
-                    className="h-7 w-7 p-0 text-white/50 hover:text-white hover:bg-white/10 rounded-md"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-            </SidebarHeader>
-            <SidebarContent>
-              <ScrollArea className="flex-1">
-                <div className="p-2">
-                  {videoHistory.length === 0 ? (
-                    <div className="text-center text-white/50 text-sm p-8">
-                      <div className="mb-4">
-                        <History className="h-6 w-6 mx-auto opacity-30" />
+      
+      <div className="flex min-h-[calc(100vh-4rem)]">
+        {/* Sidebar for History */}
+        <div className="w-80 border-r border-white/10 bg-white/5 backdrop-blur-sm">
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">Study History</h2>
+              {videoHistory.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearHistory}
+                  className="h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/10 rounded-md"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          <ScrollArea className="h-[calc(100vh-12rem)]">
+            <div className="p-4">
+              {videoHistory.length === 0 ? (
+                <div className="text-center text-white/50 py-12">
+                  <History className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No study materials created yet</p>
+                  <p className="text-xs mt-1">Start by adding a YouTube video to generate revision content</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {videoHistory.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleHistoryItemClick(item)}
+                      className="group relative flex items-start gap-3 p-3 rounded-lg hover:bg-white/10 cursor-pointer transition-all duration-200"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-medium line-clamp-2 leading-tight mb-1">
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-white/50">
+                          {formatDate(item.timestamp)}
+                        </p>
                       </div>
-                      <p className="text-xs">No conversations yet</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromHistory(item.id);
+                        }}
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-white/40 hover:text-white hover:bg-white/10 rounded transition-all"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {videoHistory.map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => handleHistoryItemClick(item)}
-                          className="group relative flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-all duration-200"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white/90 font-medium line-clamp-2 leading-tight mb-1">
-                              {item.title}
-                            </p>
-                            <p className="text-xs text-white/40">
-                              {formatDate(item.timestamp)}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFromHistory(item.id);
-                            }}
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-white/40 hover:text-white hover:bg-white/10 rounded transition-all"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col items-center">
+          <div className="w-full max-w-4xl mx-auto p-8 space-y-12">
+            
+            {/* Header Section */}
+            <div className="text-center space-y-6">
+              <div className="flex items-center justify-center gap-4">
+                <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl shadow-lg">
+                  <Brain className="h-10 w-10 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-white mb-2">
+                    Smart Revision Hub
+                  </h1>
+                  <p className="text-white/80 text-lg">Convert educational videos into personalized study materials for effective revision</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Input Form */}
+            <div className="w-full max-w-2xl mx-auto">
+              <UrlInputForm
+                onSubmit={handleGenerateContent}
+                isLoading={generateMutation.isPending}
+                onModeChange={setCurrentMode}
+                currentMode={currentMode}
+                defaultValue={currentVideoUrl}
+              />
+            </div>
+
+            {/* Error Display */}
+            {generateMutation.isError && (
+              <div className="w-full max-w-2xl mx-auto">
+                <Card className="border-red-500/30 bg-red-500/10 backdrop-blur-md">
+                  <CardContent className="p-6 text-center">
+                    <div className="text-red-300 font-medium">
+                      {generateMutation.error instanceof Error
+                        ? generateMutation.error.message
+                        : "An error occurred. Please try again."}
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Results Section */}
+            {(flashcards.length > 0 || quizQuestions.length > 0) && (
+              <div className="w-full space-y-8">
+                <div className="text-center space-y-3">
+                  <h2 className="text-2xl font-semibold text-white">
+                    {currentMode === "flashcards" ? "Revision Flashcards" : "Knowledge Assessment"}
+                  </h2>
+                  <p className="text-white/70">
+                    {currentMode === "flashcards" 
+                      ? `${flashcards.length} flashcards created for focused revision and memory retention`
+                      : `${quizQuestions.length} questions to evaluate your comprehension and identify knowledge gaps`
+                    }
+                  </p>
+                </div>
+
+                <div className="w-full max-w-3xl mx-auto">
+                  {currentMode === "flashcards" && flashcards.length > 0 && (
+                    <Flashcard flashcards={flashcards} />
+                  )}
+                  {currentMode === "quiz" && quizQuestions.length > 0 && (
+                    <QuizStack
+                      quizQuestions={quizQuestions}
+                      onComplete={handleQuizComplete}
+                    />
                   )}
                 </div>
-              </ScrollArea>
-            </SidebarContent>
-          </Sidebar>
-          
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-8">
-              <div className="max-w-4xl mx-auto space-y-8">
-                {/* Header Section */}
-                <div className="text-center space-y-4">
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl">
-                      <Brain className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white">
-                        AI Study Assistant
-                      </h1>
-                      <p className="text-white/70">Transform YouTube videos into interactive learning materials</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Input Form */}
-                <div className="max-w-2xl mx-auto">
-                  <UrlInputForm
-                    onSubmit={handleGenerateContent}
-                    isLoading={generateMutation.isPending}
-                    onModeChange={setCurrentMode}
-                    currentMode={currentMode}
-                    defaultValue={currentVideoUrl}
-                  />
-                </div>
-
-                {/* Error Display */}
-                {generateMutation.isError && (
-                  <Card className="max-w-2xl mx-auto border-red-500/20 bg-red-500/10 backdrop-blur-md">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-red-400 text-sm">
-                        {generateMutation.error instanceof Error
-                          ? generateMutation.error.message
-                          : "An error occurred. Please try again."}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Results Section */}
-                {(flashcards.length > 0 || quizQuestions.length > 0) && (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <h2 className="text-xl font-semibold text-white mb-2">
-                        {currentMode === "flashcards" ? "Study Cards" : "Practice Quiz"}
-                      </h2>
-                      <p className="text-white/60 text-sm">
-                        {currentMode === "flashcards" 
-                          ? `${flashcards.length} cards generated from the video content`
-                          : `${quizQuestions.length} questions to test your understanding`
-                        }
-                      </p>
-                    </div>
-
-                    <div className="max-w-3xl mx-auto">
-                      {currentMode === "flashcards" && flashcards.length > 0 && (
-                        <Flashcard flashcards={flashcards} />
-                      )}
-                      {currentMode === "quiz" && quizQuestions.length > 0 && (
-                        <QuizStack
-                          quizQuestions={quizQuestions}
-                          onComplete={handleQuizComplete}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-            </main>
-          </SidebarInset>
+            )}
+          </div>
         </div>
-      </SidebarProvider>
+      </div>
     </div>
   );
 }
