@@ -125,19 +125,7 @@ export const videoSearchSchema = z.object({
     .default("any"),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
-export type LearningHistory = typeof learningHistory.$inferSelect;
-export type InsertLearningHistory = z.infer<typeof insertLearningHistorySchema>;
-export type BreakSession = typeof breakSessions.$inferSelect;
-export type InsertBreakSession = z.infer<typeof insertBreakSessionSchema>;
-export type InsertSearchHistory = z.infer<typeof insertSearchHistorySchema>;
-export type SearchHistory = typeof searchHistory.$inferSelect;
-export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
-export type Favorite = typeof favorites.$inferSelect;
-export type VideoSearchRequest = z.infer<typeof videoSearchSchema>;
+
 
 export type Flashcard = {
   question: string;
