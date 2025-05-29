@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,10 +22,10 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface UrlInputFormProps {
-  onSubmit: (url: string) => void;
-  isLoading: boolean;
-  onModeChange: (mode: "flashcards" | "quiz") => void;
-  currentMode: "flashcards" | "quiz";
+  onSubmit: (url: string, options?: { quizType?: string }) => void;
+  isLoading?: boolean;
+  onModeChange?: (mode: "flashcards" | "quiz") => void;
+  currentMode?: "flashcards" | "quiz";
   defaultValue?: string;
 }
 
@@ -38,6 +37,8 @@ export function UrlInputForm({
   defaultValue = "",
 }: UrlInputFormProps) {
   const [url, setUrl] = useState(defaultValue);
+  const [mode, setMode] = useState<"flashcards" | "quiz">(currentMode || "flashcards");
+  const [quizType, setQuizType] = useState("standard");
 
   // Update url when defaultValue changes
   useEffect(() => {
@@ -54,7 +55,7 @@ export function UrlInputForm({
   });
 
   const handleSubmit = (data: FormData) => {
-    onSubmit(data.youtubeUrl);
+    onSubmit(data.youtubeUrl, mode === "quiz" ? { quizType } : undefined);
   };
 
   const handleError = () => {
@@ -122,6 +123,23 @@ export function UrlInputForm({
               </Button>
             </div>
           </div>
+
+          {/* Quiz Type Selection */}
+          {currentMode === "quiz" && (
+            <div className="space-y-3">
+              <Label className="text-gray-800 dark:text-white font-medium text-sm">Quiz Type</Label>
+              <select
+                value={quizType}
+                onChange={(e) => setQuizType(e.target.value)}
+                className="w-full px-4 py-4 bg-white/10 dark:bg-white/10 border border-gray-300 dark:border-white/30 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 text-sm"
+              >
+                <option value="standard">Standard Quiz</option>
+                <option value="challenging">Challenging Questions</option>
+                <option value="quick">Quick Review</option>
+                <option value="comprehensive">Comprehensive Test</option>
+              </select>
+            </div>
+          )}
 
           <Button 
             type="submit" 

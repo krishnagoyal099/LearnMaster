@@ -1,6 +1,24 @@
 import { Flashcard, QuizQuestion } from "@shared/schema";
 import { nanoid } from "nanoid";
 
+export function parseFlashcards(content: string): Flashcard[] {
+  const flashcards: Flashcard[] = [];
+  
+  // Split by ### delimiter
+  const sections = content.split('###').map(section => section.trim()).filter(section => section.length > 0);
+
+  for (const section of sections) {
+    if (section.startsWith('Flashcard:')) {
+      const flashcard = parseFlashcard(section);
+      if (flashcard) {
+        flashcards.push(flashcard);
+      }
+    }
+  }
+
+  return flashcards;
+}
+
 export function parseFlashcardsAndQuiz(geminiResponse: string): {
   flashcards: Flashcard[];
   quizQuestions: QuizQuestion[];

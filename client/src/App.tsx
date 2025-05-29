@@ -11,6 +11,7 @@ import Break from "@/pages/Break";
 import NotFound from "@/pages/not-found";
 import Revision from "./pages/Revision";
 import Chat from "@/pages/Chat";
+import FindResources from "@/pages/FindResources";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 function Router() {
@@ -20,8 +21,9 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/break" component={Break} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/revision" component={Revision} />{" "}
+      <Route path="/revision" component={Revision} />
       <Route path="/chat" component={Chat} />
+      <Route path="/find-resources" component={FindResources} />
       <Route component={NotFound} />
     </Switch>
   );

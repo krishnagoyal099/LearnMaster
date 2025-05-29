@@ -14,6 +14,11 @@ import { generateContentWithGemini } from "./utils/geminiClient";
 import { parseFlashcardsAndQuiz } from "./utils/flashcardParser";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { insertUser, getUser, updateUser, insertMessage, getMessages } from "./storage";
+import { generateWithGemini } from "./utils/geminiClient";
+import { getYouTubeTranscript } from "./utils/youtubeTranscript";
+import { parseFlashcardsAndQuiz } from "./utils/flashcardParser";
+import { searchLearnAnything } from "./utils/learnAnythingScraper";
 
 interface Video {
   id: number;
@@ -336,12 +341,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const minutes = durationMatch?.[2] || "0";
             const seconds = durationMatch?.[3] || "0";
             const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
-            
+
             // Filter out shorts (videos under 1 minute) and very long videos for quick learning
             if (timePreference === "quick" && (totalMinutes < 1 || totalMinutes > 30)) {
               return null;
             }
-            
+
             // For one-shot, prefer longer comprehensive videos
             if (timePreference === "one-shot" && totalMinutes < 10) {
               return null;
@@ -1051,6 +1056,37 @@ Response:`;
     }
   });
 
+  app.post("/api/flashcards/parse", async (req, res) => {
+    try {
+      const { content } = req.body;
+
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+
+      const flashcards = parseFlashcards(content);
+      res.json(flashcards);
+    } catch (error) {
+      console.error("Error parsing flashcards:", error);
+      res.status(500).json({ error: "Failed to parse flashcards" });
+    }
+  });
+
+  app.get("/api/learn-anything/search", async (req, res) => {
+    try {
+      const { topic } = req.query;
+
+      if (!topic || typeof topic !== "string") {
+        return res.status(400).json({ error: "Topic parameter is required" });
+      }
+
+      const resources = await searchLearnAnything(topic);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error searching learn-anything:", error);
+      res.status(500).json({ error: "Failed to search resources" });
+    }
+  });
   const httpServer = createServer(app);
   return httpServer;
 }

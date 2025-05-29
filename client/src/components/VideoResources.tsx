@@ -109,16 +109,10 @@ export function VideoResources({ subject, timePreference }: VideoResourcesProps)
   return (
     <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
       <CardHeader className="border-b border-border">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <Play className="mr-2 h-5 w-5 text-red-500" />
-            Video Resources
-          </CardTitle>
-          <Button variant="outline" size="sm">
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Track Progress
-          </Button>
-        </div>
+        <CardTitle className="flex items-center">
+          <Play className="mr-2 h-5 w-5 text-red-500" />
+          Video Resources
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         {selectedVideo ? (

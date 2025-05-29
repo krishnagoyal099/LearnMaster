@@ -116,10 +116,10 @@ export default function Revision() {
     }
   };
 
-  const handleGenerateContent = async (youtubeUrl: string) => {
+  const handleGenerateContent = async (youtubeUrl: string, options?: { quizType?: string }) => {
     setCurrentVideoUrl(youtubeUrl);
     await addToHistory(youtubeUrl);
-    generateMutation.mutate({ youtubeUrl });
+    generateMutation.mutate({ youtubeUrl, ...options });
   };
 
   const handleHistoryItemClick = (historyItem: VideoHistory) => {
@@ -231,19 +231,17 @@ export default function Revision() {
             {/* Header Section */}
             <div className="text-center space-y-6">
               <div className="flex items-center justify-center gap-4">
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl shadow-lg">
-                  <Brain className="h-10 w-10 text-white" />
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                  <Brain className="h-8 w-8 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-foreground text-4xl font-bold mb-2">
-                    Smart Revision Hub
-                  </h1>
-                  <p className="text-muted-foreground text-lg">
-                    Convert educational videos into personalized study materials
-                    for effective revision
-                  </p>
-                </div>
+                <h1 className="text-foreground text-4xl font-bold">
+                  Smart Revision Hub
+                </h1>
               </div>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Convert educational videos into personalized study materials
+                for effective revision
+              </p>
             </div>
 
             {/* Input Form */}

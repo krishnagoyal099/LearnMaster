@@ -55,22 +55,7 @@ export function LearningInterface({ subject }: LearningInterfaceProps) {
           <BookResources subject={subject} />
         </div>
 
-        {/* Progress Tracker */}
-        <div className="fixed bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center">
-              <Clock className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                Today's Progress
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Learning {subject}
-              </div>
-            </div>
-          </div>
-        </div>
+        
       </div>
     </main>
   );

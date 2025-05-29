@@ -3,13 +3,23 @@ import { Button } from "@/components/ui/button";
 import { LoginModal } from "./LoginModal";
 import { useTheme } from "./ThemeProvider";
 import { Sun, Moon } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header({ onLogoClick }: { onLogoClick?: () => void }) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  const handleLogoClick = () => {
+    if (location === "/") {
+      window.location.reload();
+    } else {
+      setLocation("/");
+    }
+    if (onLogoClick) onLogoClick();
+  };
 
   return (
     <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
@@ -18,7 +28,7 @@ export function Header({ onLogoClick }: { onLogoClick?: () => void }) {
           <div className="flex items-center space-x-8">
             <div
               className="cursor-pointer flex items-center space-x-3 hover:opacity-80 transition-all duration-300 py-4"
-              onClick={onLogoClick}
+              onClick={handleLogoClick}
             >
               <img src="/logo.png" alt="EduBuddy Logo" className="h-32 w-26" />
               <span className="text-2xl font-bold text-foreground tracking-tight">
@@ -31,6 +41,13 @@ export function Header({ onLogoClick }: { onLogoClick?: () => void }) {
                 className="text-base font-medium text-muted-foreground hover:text-primary transition-all duration-300 relative group"
               >
                 Leaderboard
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 group-hover:w-full transition-all duration-300 ease-out"></span>
+              </a>
+              <a
+                href="/find-resources"
+                className="text-base font-medium text-muted-foreground hover:text-primary transition-all duration-300 relative group"
+              >
+                Find Resources
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 group-hover:w-full transition-all duration-300 ease-out"></span>
               </a>
               <a
